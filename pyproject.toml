@@ -1,5 +1,5 @@
 [project]
-name = "terminus-cli"
+name = "terminus-ai"
 version = "0.1.0"
 description = "Terminus CLI: An autonomous AI agent for terminal-based task execution"
 readme = "README.md"
