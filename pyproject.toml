@@ -1,6 +1,6 @@
 [project]
 name = "terminus-ai"
-version = "0.1.0"
+version = "1.0.0"
 description = "Terminus CLI: An autonomous AI agent for terminal-based task execution"
 readme = "README.md"
 requires-python = ">=3.12"

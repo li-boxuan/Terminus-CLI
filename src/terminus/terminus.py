@@ -57,7 +57,7 @@ class SubagentMetrics:
     total_cost_usd: float = 0.0
 
 
-class Terminus2(BaseAgent):
+class Terminus(BaseAgent):
     def __init__(
         self,
         logs_dir: Path,
@@ -72,7 +72,7 @@ class Terminus2(BaseAgent):
         *args,
         **kwargs,
     ):
-        """Initialize Terminus 2 agent.
+        """Initialize Terminus agent.
 
         Args:
             logs_dir: Directory to store logs
@@ -90,7 +90,7 @@ class Terminus2(BaseAgent):
         super().__init__(logs_dir, model_name, *args, **kwargs)
 
         if model_name is None:
-            raise ValueError("model_name is required for Terminus 2")
+            raise ValueError("model_name is required for Terminus")
 
         self._model_name = model_name
         self._parser_name = parser_name
@@ -166,7 +166,7 @@ class Terminus2(BaseAgent):
         return "terminus-cli"
 
     def version(self) -> str | None:
-        return "2.0.0"
+        return "1.0.0"
 
     async def setup(self, environment: BaseEnvironment) -> None:
         self._session = TmuxSession(
