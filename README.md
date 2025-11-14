@@ -7,9 +7,34 @@ Terminus is an agent for terminal-based task execution. It integrates with Harbo
 ### Prerequisites
 
 - Python >=3.12
+- tmux (required for terminal session management)
 - Harbor framework installed
 
-### Install from local path
+### Installing tmux
+
+Terminus requires tmux to manage terminal sessions. Install it using your system's package manager:
+
+**macOS:**
+```bash
+brew install tmux
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install tmux
+```
+
+**Fedora:**
+```bash
+sudo dnf install tmux
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S tmux
+```
+
+### Install Terminus
 
 For local development:
 
@@ -38,7 +63,10 @@ terminus "Create a file hello.txt" \
 terminus --help
 ```
 
-**Note:** The CLI is primarily for testing. For full functionality, Terminus requires integration with Harbor (see below).
+**Note:**
+- The CLI runs directly on your local system using tmux (no Docker required)
+- For testing and simple tasks, the CLI is quick and convenient
+- For production use cases and complex evaluations, integration with Harbor is recommended (see below)
 
 ### Usage with Harbor
 

@@ -297,17 +297,13 @@ class TmuxSession:
     @property
     def _tmux_start_session(self) -> str:
         # Return a single command string instead of a list
-        # Use script to create a pseudo-TTY for tmux without needing Docker's -it flags
+        # When running on host (not in Docker), tmux can run directly without script command
+        # TODO(alexgshaw) make x & y configurable.
         return (
             f"export TERM=xterm-256color && "
-            f"export SHELL=/bin/bash && "
-            # Use script to allocate a PTY for tmux
-            f'script -qc "'
-            # TODO(alexgshaw) make x & y configurable.
             f"tmux new-session -x 160 -y 40 -d -s {self._session_name} 'bash --login' \\; "
             f"pipe-pane -t {self._session_name} "
             f"'cat > {self._logging_path}'"
-            f'" /dev/null'
         )
 
     def _tmux_send_keys(self, keys: list[str]) -> str:
@@ -341,6 +337,23 @@ class TmuxSession:
 
     async def start(self) -> None:
         await self._attempt_tmux_installation()
+
+        # Check if session already exists
+        check_result = await self.environment.exec(
+            command=f"tmux has-session -t {self._session_name} 2>/dev/null"
+        )
+
+        if check_result.return_code == 0:
+            # Session exists, kill it first
+            self._logger.debug(f"Existing session {self._session_name} found, killing it")
+            kill_result = await self.environment.exec(
+                command=f"tmux kill-session -t {self._session_name}"
+            )
+            if kill_result.return_code != 0:
+                self._logger.warning(
+                    f"Failed to kill existing session: {kill_result.stderr}"
+                )
+
         start_session_result = await self.environment.exec(
             command=self._tmux_start_session
         )
@@ -398,7 +411,27 @@ class TmuxSession:
                 )
             else:
                 self._logger.debug("No markers to merge")
-        ...
+
+        # Check if session exists before trying to kill it
+        check_result = await self.environment.exec(
+            command=f"tmux has-session -t {self._session_name} 2>/dev/null"
+        )
+
+        if check_result.return_code == 0:
+            # Session exists, kill it
+            self._logger.debug(f"Killing tmux session: {self._session_name}")
+            kill_result = await self.environment.exec(
+                command=f"tmux kill-session -t {self._session_name}"
+            )
+            if kill_result.return_code != 0:
+                self._logger.warning(
+                    f"Failed to kill tmux session {self._session_name}: {kill_result.stderr}"
+                )
+        else:
+            # Session doesn't exist or tmux server is not running - this is fine
+            self._logger.debug(
+                f"Tmux session {self._session_name} already terminated or tmux server not running"
+            )
 
     def _is_enter_key(self, key: str) -> bool:
         return key in self._ENTER_KEYS

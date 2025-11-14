@@ -180,6 +180,11 @@ class Terminus2(BaseAgent):
         )
         await self._session.start()
 
+    async def teardown(self) -> None:
+        """Clean up the tmux session."""
+        if self._session:
+            await self._session.stop()
+
     def _get_parser(self):
         """Return the appropriate parser instance for this format."""
         if self._parser_name == "json":
