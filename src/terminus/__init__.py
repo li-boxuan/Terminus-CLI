@@ -1,3 +1,3 @@
-from terminus.terminus_2 import Terminus2
+from terminus.terminus import Terminus
 
-__all__ = ["Terminus2"]
+__all__ = ["Terminus"]

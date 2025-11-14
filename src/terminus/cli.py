@@ -8,7 +8,7 @@ import typer
 from typing_extensions import Annotated
 
 from terminus.local_environment import LocalEnvironment
-from terminus.terminus_2 import Terminus2
+from terminus.terminus import Terminus
 
 app = typer.Typer(help="Terminus - Terminal-based AI agent for task execution")
 
@@ -62,7 +62,7 @@ def run(
 
     working_dir = working_dir.resolve()
 
-    agent = Terminus2(
+    agent = Terminus(
         logs_dir=logs_dir,
         model_name=model,
         max_turns=max_turns,

@@ -163,7 +163,7 @@ class Terminus2(BaseAgent):
 
     @staticmethod
     def name() -> str:
-        return "terminus-2"
+        return "terminus-cli"
 
     def version(self) -> str | None:
         return "2.0.0"
@@ -172,7 +172,7 @@ class Terminus2(BaseAgent):
         self._session = TmuxSession(
             session_name=self.name(),
             environment=environment,
-            logging_path=environment.trial_paths.agent_dir / "terminus_2.pane",
+            logging_path=environment.trial_paths.agent_dir / "terminus.pane",
             local_asciinema_recording_path=environment.trial_paths.agent_dir
             / "recording.cast",
             remote_asciinema_recording_path=EnvironmentPaths.agent_dir
@@ -472,7 +472,7 @@ Be comprehensive and detailed. The next agent needs to understand everything
         summary_trajectory = Trajectory(
             session_id=summary_session_id,
             agent=Agent(
-                name="terminus-2-summarization-summary",
+                name="Terminus CLI summarization-summary",
                 version=self.version() or "unknown",
                 model_name=self._model_name,
                 extra={
@@ -617,7 +617,7 @@ so ask everything you need to know."""
         questions_trajectory = Trajectory(
             session_id=questions_session_id,
             agent=Agent(
-                name="terminus-2-summarization-questions",
+                name="Terminus CLI summarization-questions",
                 version=self.version() or "unknown",
                 model_name=self._model_name,
                 extra={
@@ -750,7 +750,7 @@ so ask everything you need to know."""
         answers_trajectory = Trajectory(
             session_id=answers_session_id,
             agent=Agent(
-                name="terminus-2-summarization-answers",
+                name="Terminus CLI summarization-answers",
                 version=self.version() or "unknown",
                 model_name=self._model_name,
                 extra={

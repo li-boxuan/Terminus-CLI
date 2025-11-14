@@ -78,7 +78,7 @@ When configuring your Harbor task, use the import path to load the Terminus agen
 
 ```yaml
 agent:
-  import_path: "terminus:Terminus2"
+  import_path: "terminus:Terminus"
   model_name: "anthropic/claude-sonnet-4"
   kwargs:
     parser_name: "json"  # or "xml"
@@ -94,7 +94,7 @@ from harbor import AgentFactory
 from pathlib import Path
 
 agent = AgentFactory.create_agent_from_import_path(
-    import_path="terminus:Terminus2",
+    import_path="terminus:Terminus",
     logs_dir=Path("./logs"),
     model_name="anthropic/claude-sonnet-4",
     parser_name="json",
@@ -105,10 +105,10 @@ agent = AgentFactory.create_agent_from_import_path(
 ### Option 2: Direct instantiation
 
 ```python
-from terminus import Terminus2
+from terminus import Terminus
 from pathlib import Path
 
-agent = Terminus2(
+agent = Terminus(
     logs_dir=Path("./logs"),
     model_name="anthropic/claude-sonnet-4",
     parser_name="json",  # or "xml"
