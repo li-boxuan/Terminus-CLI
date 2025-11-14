@@ -17,9 +17,32 @@ For local development:
 pip install -e /path/to/terminus
 ```
 
-## Usage with Harbor
+## Usage
 
-Terminus is designed to work as an external agent with Harbor. You can use it in two ways:
+### Command Line Interface
+
+Terminus provides a CLI for quick testing and demonstration:
+
+```bash
+# Basic usage
+terminus "Create a file hello.txt with Hello World"
+
+# With options
+terminus "Create a file hello.txt" \
+  --model openai/gpt-4o \
+  --logs-dir ./logs \
+  --parser json \
+  --temperature 0.7
+
+# Show help
+terminus --help
+```
+
+**Note:** The CLI is primarily for testing. For full functionality, Terminus requires integration with Harbor (see below).
+
+### Usage with Harbor
+
+Terminus is designed to work as an external agent with Harbor. You can use it in several ways:
 
 ### Option 1: Using import path (Recommended)
 

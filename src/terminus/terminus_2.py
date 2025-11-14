@@ -163,7 +163,7 @@ class Terminus2(BaseAgent):
 
     @staticmethod
     def name() -> str:
-        return AgentName.TERMINUS_2.value
+        return "terminus-2"
 
     def version(self) -> str | None:
         return "2.0.0"
