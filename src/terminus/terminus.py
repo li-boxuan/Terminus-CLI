@@ -25,7 +25,6 @@ from harbor.llms.base import (
 from harbor.llms.chat import Chat
 from harbor.llms.lite_llm import LiteLLM
 from harbor.models.agent.context import AgentContext
-from harbor.models.agent.name import AgentName
 from harbor.models.trajectories import (
     Agent,
     FinalMetrics,
@@ -69,6 +68,8 @@ class Terminus(BaseAgent):
         collect_rollout_details: bool = False,
         session_id: str | None = None,
         enable_summarize: bool = True,
+        trajectory_path: Path | None = None,
+        context_path: Path | None = None,
         *args,
         **kwargs,
     ):
@@ -160,6 +161,8 @@ class Terminus(BaseAgent):
         self._enable_summarize = (
             enable_summarize  # Toggle for proactive and context limit summarization
         )
+        self._trajectory_path = trajectory_path  # Custom path for trajectory file
+        self._context_path = context_path  # Custom path for context file
 
     @staticmethod
     def name() -> str:
@@ -1338,6 +1341,9 @@ so ask everything you need to know."""
 
             # Dump trajectory after every episode to ensure we persist even if program terminates
             self._dump_trajectory()
+            
+            # Dump context after every episode to ensure we persist even if program terminates
+            self._dump_context()
 
             if is_task_complete:
                 if was_pending_completion:
@@ -1425,6 +1431,9 @@ so ask everything you need to know."""
 
             # Dump trajectory to JSON
             self._dump_trajectory()
+            
+            # Dump context to JSON
+            self._dump_context()
 
     def _dump_trajectory(self) -> None:
         """Dump trajectory data to JSON file following ATIF format."""
@@ -1456,13 +1465,38 @@ so ask everything you need to know."""
         )
 
         # Write to file using Pydantic's to_json_dict method
-        trajectory_path = self.logs_dir / "trajectory.json"
+        # Use custom trajectory path if provided, otherwise use default
+        trajectory_path = self._trajectory_path if self._trajectory_path else self.logs_dir / "trajectory.json"
         try:
+            # Ensure parent directory exists
+            trajectory_path.parent.mkdir(parents=True, exist_ok=True)
             with open(trajectory_path, "w") as f:
                 json.dump(trajectory.to_json_dict(), f, indent=2)
             self._logger.info(f"Trajectory dumped to {trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to dump trajectory: {e}")
+
+    def _dump_context(self) -> None:
+        """Dump agent context to JSON file."""
+        if not self._context:
+            self._logger.warning("No context available, skipping context dump")
+            return
+
+        # Use custom context path if provided, otherwise use default
+        context_path = self._context_path if self._context_path else self.logs_dir / "context.json"
+        try:
+            # Ensure parent directory exists
+            context_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Convert AgentContext to dictionary for JSON serialization
+            # AgentContext is a Pydantic model, so we can use model_dump()
+            context_dict = self._context.model_dump(mode='json', exclude_none=True)
+            
+            with open(context_path, "w") as f:
+                json.dump(context_dict, f, indent=2)
+            self._logger.info(f"Context dumped to {context_path}")
+        except Exception as e:
+            self._logger.error(f"Failed to dump context: {e}")
 
     # TODO: Add asciinema logging
     def _record_asciinema_marker(self, marker_text: str) -> None:

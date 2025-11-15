@@ -28,6 +28,8 @@ def run(
     max_turns: Annotated[int, typer.Option("--max-turns", help="Maximum number of turns")] = 1000000,
     api_base: Annotated[str | None, typer.Option("--api-base", help="API base URL")] = None,
     working_dir: Annotated[Path, typer.Option("--working-dir", "-w", help="Working directory for task execution")] = Path.cwd(),
+    trajectory_path: Annotated[Path | None, typer.Option("--trajectory-path", help="Path to write trajectory JSON file")] = None,
+    context_path: Annotated[Path | None, typer.Option("--context-path", help="Path to write context JSON file")] = None,
 ):
     """Run the Terminus agent with the given instruction."""
     # Check if tmux is available
@@ -49,7 +51,7 @@ def run(
     from harbor.models.agent.context import AgentContext
     from harbor.models.trial.paths import TrialPaths
 
-    typer.echo(f"Starting Terminus agent...")
+    typer.echo("Starting Terminus agent...")
     typer.echo(f"Model: {model}")
     typer.echo(f"Parser: {parser}")
     typer.echo(f"Logs directory: {logs_dir}")
@@ -69,6 +71,8 @@ def run(
         parser_name=parser,
         api_base=api_base,
         temperature=temperature,
+        trajectory_path=trajectory_path,
+        context_path=context_path,
     )
 
     # Create trial paths
