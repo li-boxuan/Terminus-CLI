@@ -1341,7 +1341,7 @@ so ask everything you need to know."""
 
             # Dump trajectory after every episode to ensure we persist even if program terminates
             self._dump_trajectory()
-            
+
             # Dump context after every episode to ensure we persist even if program terminates
             self._dump_context()
 
@@ -1431,7 +1431,7 @@ so ask everything you need to know."""
 
             # Dump trajectory to JSON
             self._dump_trajectory()
-            
+
             # Dump context to JSON
             self._dump_context()
 
@@ -1487,11 +1487,11 @@ so ask everything you need to know."""
         try:
             # Ensure parent directory exists
             context_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Convert AgentContext to dictionary for JSON serialization
             # AgentContext is a Pydantic model, so we can use model_dump()
             context_dict = self._context.model_dump(mode='json', exclude_none=True)
-            
+
             with open(context_path, "w") as f:
                 json.dump(context_dict, f, indent=2)
             self._logger.info(f"Context dumped to {context_path}")
