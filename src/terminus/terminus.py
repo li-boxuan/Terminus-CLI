@@ -3,6 +3,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from importlib.metadata import version as get_package_version
 from pathlib import Path
 
 from harbor.agents.base import BaseAgent
@@ -159,7 +160,24 @@ class Terminus(BaseAgent):
         return "terminus-cli"
 
     def version(self) -> str | None:
-        return "1.0.0"
+        """Get version from package metadata or pyproject.toml."""
+        try:
+            # Try to get version from installed package metadata
+            return get_package_version("terminus-ai")
+        except Exception:
+            # Fall back to reading from pyproject.toml
+            try:
+                import tomllib
+
+                pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+                if pyproject_path.exists():
+                    with open(pyproject_path, "rb") as f:
+                        data = tomllib.load(f)
+                        return data.get("project", {}).get("version")
+            except Exception:
+                pass
+
+        return None
 
     async def setup(self, environment: BaseEnvironment) -> None:
         self._session = TmuxSession(
