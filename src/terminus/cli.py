@@ -1,11 +1,12 @@
 """CLI interface for Terminus agent."""
+
 import asyncio
 import shutil
 import sys
 from pathlib import Path
+from typing import Annotated
 
 import typer
-from typing_extensions import Annotated
 
 from terminus.local_environment import LocalEnvironment
 from terminus.terminus import Terminus
@@ -27,9 +28,18 @@ def run(
     temperature: Annotated[float, typer.Option("--temperature", "-t", help="Sampling temperature")] = 0.7,
     max_turns: Annotated[int, typer.Option("--max-turns", help="Maximum number of turns")] = 1000000,
     api_base: Annotated[str | None, typer.Option("--api-base", help="API base URL")] = None,
-    working_dir: Annotated[Path, typer.Option("--working-dir", "-w", help="Working directory for task execution")] = Path.cwd(),
-    trajectory_path: Annotated[Path | None, typer.Option("--trajectory-path", help="Path to write trajectory JSON file")] = None,
-    context_path: Annotated[Path | None, typer.Option("--context-path", help="Path to write context JSON file")] = None,
+    working_dir: Annotated[
+        Path,
+        typer.Option("--working-dir", "-w", help="Working directory for task execution"),
+    ] = Path.cwd(),
+    trajectory_path: Annotated[
+        Path | None,
+        typer.Option("--trajectory-path", help="Path to write trajectory JSON file"),
+    ] = None,
+    context_path: Annotated[
+        Path | None,
+        typer.Option("--context-path", help="Path to write context JSON file"),
+    ] = None,
 ):
     """Run the Terminus agent with the given instruction."""
     # Check if tmux is available
@@ -99,13 +109,13 @@ def run(
             typer.echo(f"\nRunning agent on task: {instruction}\n")
             await agent.run(instruction, environment, context)
 
-            typer.echo("\n" + "="*50)
+            typer.echo("\n" + "=" * 50)
             typer.echo("✓ Task completed!")
             if context.cost_usd:
                 typer.echo(f"Total cost: ${context.cost_usd:.4f}")
             if context.metadata:
                 typer.echo(f"Turns: {context.metadata.get('n_episodes', 0)}")
-            typer.echo("="*50)
+            typer.echo("=" * 50)
         except Exception as e:
             typer.echo(f"\n✗ Error: {e}", err=True)
             raise

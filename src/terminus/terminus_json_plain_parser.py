@@ -1,7 +1,6 @@
 import json
 import re
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
@@ -12,7 +11,7 @@ class ParsedCommand:
 
 @dataclass
 class ParseResult:
-    commands: List[ParsedCommand]
+    commands: list[ParsedCommand]
     is_task_complete: bool
     error: str
     warning: str
@@ -49,13 +48,8 @@ class TerminusJSONPlainParser:
 
                     if corrected_result.error == "":
                         # Success! Add auto-correction warning
-                        auto_warning = (
-                            f"AUTO-CORRECTED: {fix_name} - "
-                            "please fix this in future responses"
-                        )
-                        corrected_result.warning = self._combine_warnings(
-                            auto_warning, corrected_result.warning
-                        )
+                        auto_warning = f"AUTO-CORRECTED: {fix_name} - " "please fix this in future responses"
+                        corrected_result.warning = self._combine_warnings(auto_warning, corrected_result.warning)
                         return corrected_result
 
         # Return original result if no fix worked
@@ -83,7 +77,8 @@ class TerminusJSONPlainParser:
                 False,
                 "No valid JSON found in response",
                 "- " + "\n- ".join(warnings) if warnings else "",
-                "", ""
+                "",
+                "",
             )
 
         # Parse JSON
@@ -97,21 +92,24 @@ class TerminusJSONPlainParser:
             else:
                 error_msg += f" | Content preview: {repr(json_content[:100])}..."
             return ParseResult(
-                [], False, error_msg, "- " + "\n- ".join(warnings) if warnings else "",
-                "", ""
+                [],
+                False,
+                error_msg,
+                "- " + "\n- ".join(warnings) if warnings else "",
+                "",
+                "",
             )
 
         # Validate structure
-        validation_error = self._validate_json_structure(
-            parsed_data, json_content, warnings
-        )
+        validation_error = self._validate_json_structure(parsed_data, json_content, warnings)
         if validation_error:
             return ParseResult(
                 [],
                 False,
                 validation_error,
                 "- " + "\n- ".join(warnings) if warnings else "",
-                "", ""
+                "",
+                "",
             )
 
         # Check if task is complete
@@ -131,20 +129,32 @@ class TerminusJSONPlainParser:
             if is_complete:
                 warnings.append(parse_error)
                 return ParseResult(
-                    [], True, "", "- " + "\n- ".join(warnings) if warnings else "",
-                    analysis, plan
+                    [],
+                    True,
+                    "",
+                    "- " + "\n- ".join(warnings) if warnings else "",
+                    analysis,
+                    plan,
                 )
             return ParseResult(
-                [], False, parse_error, "- " + "\n- ".join(warnings) if warnings else "",
-                analysis, plan
+                [],
+                False,
+                parse_error,
+                "- " + "\n- ".join(warnings) if warnings else "",
+                analysis,
+                plan,
             )
 
         return ParseResult(
-            commands, is_complete, "", "- " + "\n- ".join(warnings) if warnings else "",
-            analysis, plan
+            commands,
+            is_complete,
+            "",
+            "- " + "\n- ".join(warnings) if warnings else "",
+            analysis,
+            plan,
         )
 
-    def _extract_json_content(self, response: str) -> tuple[str, List[str]]:
+    def _extract_json_content(self, response: str) -> tuple[str, list[str]]:
         """Extract JSON content from response, handling extra text."""
         warnings = []
 
@@ -193,9 +203,7 @@ class TerminusJSONPlainParser:
 
         return response[json_start:json_end], warnings
 
-    def _validate_json_structure(
-        self, data: dict, json_content: str, warnings: List[str]
-    ) -> str:
+    def _validate_json_structure(self, data: dict, json_content: str, warnings: list[str]) -> str:
         """Validate the JSON structure has required fields."""
         if not isinstance(data, dict):
             return "Response must be a JSON object"
@@ -230,9 +238,7 @@ class TerminusJSONPlainParser:
 
         return ""
 
-    def _parse_commands(
-        self, commands_data: List[dict], warnings: List[str]
-    ) -> tuple[List[ParsedCommand], str]:
+    def _parse_commands(self, commands_data: list[dict], warnings: list[str]) -> tuple[list[ParsedCommand], str]:
         """Parse commands array into ParsedCommand objects."""
         commands = []
 
@@ -252,23 +258,17 @@ class TerminusJSONPlainParser:
             if "duration" in cmd_data:
                 duration = cmd_data["duration"]
                 if not isinstance(duration, (int, float)):
-                    warnings.append(
-                        f"Command {i + 1}: Invalid duration value, using default 1.0"
-                    )
+                    warnings.append(f"Command {i + 1}: Invalid duration value, using default 1.0")
                     duration = 1.0
             else:
-                warnings.append(
-                    f"Command {i + 1}: Missing duration field, using default 1.0"
-                )
+                warnings.append(f"Command {i + 1}: Missing duration field, using default 1.0")
                 duration = 1.0
 
             # Check for unknown fields
             known_fields = {"keystrokes", "duration"}
             unknown_fields = set(cmd_data.keys()) - known_fields
             if unknown_fields:
-                warnings.append(
-                    f"Command {i + 1}: Unknown fields: {', '.join(unknown_fields)}"
-                )
+                warnings.append(f"Command {i + 1}: Unknown fields: {', '.join(unknown_fields)}")
 
             # Check for newline at end of keystrokes if followed by another command
             if i < len(commands_data) - 1 and not keystrokes.endswith("\n"):
@@ -278,9 +278,7 @@ class TerminusJSONPlainParser:
                     "concatenated together on the same line."
                 )
 
-            commands.append(
-                ParsedCommand(keystrokes=keystrokes, duration=float(duration))
-            )
+            commands.append(ParsedCommand(keystrokes=keystrokes, duration=float(duration)))
 
         return commands, ""
 
@@ -296,12 +294,7 @@ class TerminusJSONPlainParser:
 
     def _fix_incomplete_json(self, response: str, error: str) -> tuple[str, bool]:
         """Fix incomplete JSON by adding missing closing braces."""
-        if (
-            "Invalid JSON" in error
-            or "Expecting" in error
-            or "Unterminated" in error
-            or "No valid JSON found" in error
-        ):
+        if "Invalid JSON" in error or "Expecting" in error or "Unterminated" in error or "No valid JSON found" in error:
             # Try adding closing braces
             brace_count = response.count("{") - response.count("}")
             if brace_count > 0:
@@ -331,9 +324,7 @@ class TerminusJSONPlainParser:
         else:
             return f"- {auto_warning}"
 
-    def _check_field_order(
-        self, data: dict, response: str, warnings: List[str]
-    ) -> None:
+    def _check_field_order(self, data: dict, response: str, warnings: list[str]) -> None:
         """Check if fields appear in the correct order: analysis, plan, commands."""
         # Expected order for required fields
         expected_order = ["analysis", "plan", "commands"]
@@ -358,9 +349,7 @@ class TerminusJSONPlainParser:
                 present_fields.append((field, positions[field]))
 
         # Sort by position to get actual order
-        actual_order = [
-            field for field, pos in sorted(present_fields, key=lambda x: x[1])
-        ]
+        actual_order = [field for field, pos in sorted(present_fields, key=lambda x: x[1])]
 
         # Get expected order for present fields only
         expected_present = [f for f in expected_order if f in positions]
@@ -369,7 +358,4 @@ class TerminusJSONPlainParser:
         if actual_order != expected_present:
             actual_str = " → ".join(actual_order)
             expected_str = " → ".join(expected_present)
-            warnings.append(
-                f"Fields appear in wrong order. Found: {actual_str}, "
-                f"expected: {expected_str}"
-            )
+            warnings.append(f"Fields appear in wrong order. Found: {actual_str}, " f"expected: {expected_str}")

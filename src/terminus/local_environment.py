@@ -1,4 +1,5 @@
 """Local host environment for running commands directly on the host system."""
+
 import asyncio
 import shutil
 from pathlib import Path
@@ -121,7 +122,7 @@ class LocalEnvironment(BaseEnvironment):
                     process.communicate(),
                     timeout=timeout_sec,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return ExecResult(

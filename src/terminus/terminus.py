@@ -2,20 +2,10 @@ import json
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from litellm.utils import get_model_info
-from tenacity import retry, stop_after_attempt
-
 from harbor.agents.base import BaseAgent
-from terminus.terminus_json_plain_parser import (
-    TerminusJSONPlainParser,
-)
-from terminus.terminus_xml_plain_parser import (
-    TerminusXMLPlainParser,
-)
-from terminus.tmux_session import TmuxSession
 from harbor.environments.base import BaseEnvironment
 from harbor.llms.base import (
     ContextLengthExceededError,
@@ -38,6 +28,16 @@ from harbor.models.trajectories import (
 )
 from harbor.models.trial.paths import EnvironmentPaths
 from harbor.utils.logger import logger
+from litellm.utils import get_model_info
+from tenacity import retry, stop_after_attempt
+
+from terminus.terminus_json_plain_parser import (
+    TerminusJSONPlainParser,
+)
+from terminus.terminus_xml_plain_parser import (
+    TerminusXMLPlainParser,
+)
+from terminus.tmux_session import TmuxSession
 
 
 @dataclass
@@ -113,8 +113,7 @@ class Terminus(BaseAgent):
         episodes_from_kwargs = kwargs.get("episodes")
         if episodes_from_kwargs is not None:
             self._logger.warning(
-                "The 'episodes' parameter is deprecated and will be removed in a future version. "
-                "Please use 'max_turns' instead."
+                "The 'episodes' parameter is deprecated and will be removed in a future version. " "Please use 'max_turns' instead."
             )
 
         # Determine the final max episodes value with proper precedence:
@@ -132,8 +131,7 @@ class Terminus(BaseAgent):
 
         if final_max_episodes is not None:
             self._logger.warning(
-                f"max_episodes artificially limited to {final_max_episodes}. "
-                "Consider removing this limit for better task completion."
+                f"max_episodes artificially limited to {final_max_episodes}. " "Consider removing this limit for better task completion."
             )
             self._max_episodes = final_max_episodes
         else:
@@ -148,19 +146,11 @@ class Terminus(BaseAgent):
         self._session_id = session_id if session_id else str(uuid.uuid4())
         self._trajectory_steps: list[Step] = []
 
-        self._summarization_count: int = (
-            0  # Track number of summarization subagents created
-        )
-        self._pending_subagent_refs: list[SubagentTrajectoryRef] | None = (
-            None  # Track subagent refs to include in next step
-        )
-        self._pending_handoff_prompt: str | None = (
-            None  # Track handoff prompt to include as user step
-        )
+        self._summarization_count: int = 0  # Track number of summarization subagents created
+        self._pending_subagent_refs: list[SubagentTrajectoryRef] | None = None  # Track subagent refs to include in next step
+        self._pending_handoff_prompt: str | None = None  # Track handoff prompt to include as user step
         self._subagent_metrics = SubagentMetrics()  # Track subagent metrics separately
-        self._enable_summarize = (
-            enable_summarize  # Toggle for proactive and context limit summarization
-        )
+        self._enable_summarize = enable_summarize  # Toggle for proactive and context limit summarization
         self._trajectory_path = trajectory_path  # Custom path for trajectory file
         self._context_path = context_path  # Custom path for context file
 
@@ -176,10 +166,8 @@ class Terminus(BaseAgent):
             session_name=self.name(),
             environment=environment,
             logging_path=environment.trial_paths.agent_dir / "terminus.pane",
-            local_asciinema_recording_path=environment.trial_paths.agent_dir
-            / "recording.cast",
-            remote_asciinema_recording_path=EnvironmentPaths.agent_dir
-            / "recording.cast",
+            local_asciinema_recording_path=environment.trial_paths.agent_dir / "recording.cast",
+            remote_asciinema_recording_path=EnvironmentPaths.agent_dir / "recording.cast",
         )
         await self._session.start()
 
@@ -195,9 +183,7 @@ class Terminus(BaseAgent):
         elif self._parser_name == "xml":
             return TerminusXMLPlainParser()
         else:
-            raise ValueError(
-                f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'."
-            )
+            raise ValueError(f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'.")
 
     def _get_prompt_template_path(self) -> Path:
         """Return the path to the prompt template for this format."""
@@ -206,9 +192,7 @@ class Terminus(BaseAgent):
         elif self._parser_name == "xml":
             return Path(__file__).parent / "templates" / "terminus-xml-plain.txt"
         else:
-            raise ValueError(
-                f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'."
-            )
+            raise ValueError(f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'.")
 
     def _get_timeout_template_path(self) -> Path:
         """Return the path to the timeout template for this format."""
@@ -224,9 +208,7 @@ class Terminus(BaseAgent):
         elif self._parser_name == "xml":
             return "response"
         else:
-            raise ValueError(
-                f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'."
-            )
+            raise ValueError(f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'.")
 
     def _get_completion_confirmation_message(self, terminal_output: str) -> str:
         """Return the format-specific task completion confirmation message."""
@@ -247,13 +229,9 @@ class Terminus(BaseAgent):
                 "<task_complete>true</task_complete> again."
             )
         else:
-            raise ValueError(
-                f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'."
-            )
+            raise ValueError(f"Unknown parser_name: {self._parser_name}. Use 'json' or 'xml'.")
 
-    def _setup_episode_logging(
-        self, logging_dir: Path | None, episode: int
-    ) -> tuple[Path | None, Path | None, Path | None]:
+    def _setup_episode_logging(self, logging_dir: Path | None, episode: int) -> tuple[Path | None, Path | None, Path | None]:
         if logging_dir is None:
             return None, None, None
 
@@ -314,20 +292,11 @@ class Terminus(BaseAgent):
         last_portion = output_bytes[-portion_size:].decode("utf-8", errors="ignore")
 
         # Calculate omitted bytes
-        omitted_bytes = (
-            len(output_bytes)
-            - len(first_portion.encode("utf-8"))
-            - len(last_portion.encode("utf-8"))
-        )
+        omitted_bytes = len(output_bytes) - len(first_portion.encode("utf-8")) - len(last_portion.encode("utf-8"))
 
-        return (
-            f"{first_portion}\n[... output limited to {max_bytes} bytes; "
-            f"{omitted_bytes} interior bytes omitted ...]\n{last_portion}"
-        )
+        return f"{first_portion}\n[... output limited to {max_bytes} bytes; " f"{omitted_bytes} interior bytes omitted ...]\n{last_portion}"
 
-    def _unwind_messages_to_free_tokens(
-        self, chat: Chat, target_free_tokens: int = 4000
-    ) -> None:
+    def _unwind_messages_to_free_tokens(self, chat: Chat, target_free_tokens: int = 4000) -> None:
         """Remove recent messages until we have enough free tokens."""
         context_limit = self._get_model_context_limit()
 
@@ -345,10 +314,7 @@ class Terminus(BaseAgent):
                 break
 
         free_tokens = context_limit - self._count_total_tokens(chat)
-        self._logger.info(
-            f"Unwound messages. Remaining messages: {len(chat.messages)}, "
-            f"Free tokens: approximately {free_tokens}"
-        )
+        self._logger.info(f"Unwound messages. Remaining messages: {len(chat.messages)}, " f"Free tokens: approximately {free_tokens}")
 
     async def _summarize(
         self, chat: Chat, original_instruction: str, session: TmuxSession
@@ -368,9 +334,7 @@ class Terminus(BaseAgent):
         subagent_trajectory_refs = []
 
         # ===== SUBAGENT 1: Summary Generation =====
-        summary_session_id = (
-            f"{self._session_id}-summarization-{self._summarization_count}-summary"
-        )
+        summary_session_id = f"{self._session_id}-summarization-{self._summarization_count}-summary"
         summary_steps = []
 
         summary_prompt = f"""You are about to hand off your work to another AI agent.
@@ -395,7 +359,7 @@ Be comprehensive and detailed. The next agent needs to understand everything
         summary_steps.append(
             Step(
                 step_id=1,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 source="user",
                 message=summary_prompt,
             )
@@ -406,9 +370,7 @@ Be comprehensive and detailed. The next agent needs to understand everything
             start_time = time.time()
             # Use _llm.call with message_history instead of chat.chat to avoid
             # polluting the main chat's cumulative token counts
-            summary_response: LLMResponse = await self._llm.call(
-                prompt=summary_prompt, message_history=chat.messages
-            )
+            summary_response: LLMResponse = await self._llm.call(prompt=summary_prompt, message_history=chat.messages)
             end_time = time.time()
             request_time_ms = (end_time - start_time) * 1000
             self._api_request_times.append(request_time_ms)
@@ -417,16 +379,14 @@ Be comprehensive and detailed. The next agent needs to understand everything
             usage_info = summary_response.usage
             if usage_info:
                 self._subagent_metrics.total_prompt_tokens += usage_info.prompt_tokens
-                self._subagent_metrics.total_completion_tokens += (
-                    usage_info.completion_tokens
-                )
+                self._subagent_metrics.total_completion_tokens += usage_info.completion_tokens
                 self._subagent_metrics.total_cached_tokens += usage_info.cache_tokens
                 self._subagent_metrics.total_cost_usd += usage_info.cost_usd
 
                 summary_steps.append(
                     Step(
                         step_id=2,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=summary_response.content,
@@ -439,13 +399,11 @@ Be comprehensive and detailed. The next agent needs to understand everything
                     )
                 )
             else:
-                self._logger.warning(
-                    "Failed to get token usage for summary generation LLM call"
-                )
+                self._logger.warning("Failed to get token usage for summary generation LLM call")
                 summary_steps.append(
                     Step(
                         step_id=2,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=summary_response.content,
@@ -457,20 +415,10 @@ Be comprehensive and detailed. The next agent needs to understand everything
 
         # Save summary subagent trajectory
         # Calculate metrics directly from Step instances
-        total_prompt = sum(
-            step.metrics.prompt_tokens or 0 for step in summary_steps if step.metrics
-        )
-        total_completion = sum(
-            step.metrics.completion_tokens or 0
-            for step in summary_steps
-            if step.metrics
-        )
-        total_cached = sum(
-            step.metrics.cached_tokens or 0 for step in summary_steps if step.metrics
-        )
-        total_cost = sum(
-            step.metrics.cost_usd or 0 for step in summary_steps if step.metrics
-        )
+        total_prompt = sum(step.metrics.prompt_tokens or 0 for step in summary_steps if step.metrics)
+        total_completion = sum(step.metrics.completion_tokens or 0 for step in summary_steps if step.metrics)
+        total_cached = sum(step.metrics.cached_tokens or 0 for step in summary_steps if step.metrics)
+        total_cost = sum(step.metrics.cost_usd or 0 for step in summary_steps if step.metrics)
 
         summary_trajectory = Trajectory(
             session_id=summary_session_id,
@@ -492,16 +440,11 @@ Be comprehensive and detailed. The next agent needs to understand everything
             ),
         )
 
-        summary_trajectory_path = (
-            self.logs_dir
-            / f"trajectory.summarization-{self._summarization_count}-summary.json"
-        )
+        summary_trajectory_path = self.logs_dir / f"trajectory.summarization-{self._summarization_count}-summary.json"
         try:
             with open(summary_trajectory_path, "w") as f:
                 json.dump(summary_trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(
-                f"Summary subagent trajectory saved to {summary_trajectory_path}"
-            )
+            self._logger.info(f"Summary subagent trajectory saved to {summary_trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to save summary subagent trajectory: {e}")
 
@@ -517,9 +460,7 @@ Be comprehensive and detailed. The next agent needs to understand everything
 
         # ===== SUBAGENT 2: Question Asking =====
         current_screen = await session.capture_pane(capture_entire=False)
-        questions_session_id = (
-            f"{self._session_id}-summarization-{self._summarization_count}-questions"
-        )
+        questions_session_id = f"{self._session_id}-summarization-{self._summarization_count}-questions"
         questions_steps = []
 
         question_prompt = f"""You are picking up work from a previous AI agent on this task:
@@ -540,7 +481,7 @@ so ask everything you need to know."""
         questions_steps.append(
             Step(
                 step_id=1,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 source="user",
                 message=question_prompt,
             )
@@ -549,9 +490,7 @@ so ask everything you need to know."""
         try:
             start_time = time.time()
             # Use _llm.call with empty message_history to avoid polluting main chat
-            questions_response: LLMResponse = await self._llm.call(
-                prompt=question_prompt, message_history=[]
-            )
+            questions_response: LLMResponse = await self._llm.call(prompt=question_prompt, message_history=[])
             model_questions = questions_response.content
             end_time = time.time()
             request_time_ms = (end_time - start_time) * 1000
@@ -561,16 +500,14 @@ so ask everything you need to know."""
             usage_info = questions_response.usage
             if usage_info:
                 self._subagent_metrics.total_prompt_tokens += usage_info.prompt_tokens
-                self._subagent_metrics.total_completion_tokens += (
-                    usage_info.completion_tokens
-                )
+                self._subagent_metrics.total_completion_tokens += usage_info.completion_tokens
                 self._subagent_metrics.total_cached_tokens += usage_info.cache_tokens
                 self._subagent_metrics.total_cost_usd += usage_info.cost_usd
 
                 questions_steps.append(
                     Step(
                         step_id=2,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=model_questions,
@@ -578,9 +515,7 @@ so ask everything you need to know."""
                             prompt_tokens=usage_info.prompt_tokens,
                             completion_tokens=usage_info.completion_tokens,
                             cached_tokens=usage_info.cache_tokens,
-                            cost_usd=usage_info.cost_usd
-                            if usage_info.cost_usd > 0
-                            else None,
+                            cost_usd=usage_info.cost_usd if usage_info.cost_usd > 0 else None,
                         ),
                     )
                 )
@@ -589,7 +524,7 @@ so ask everything you need to know."""
                 questions_steps.append(
                     Step(
                         step_id=2,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=model_questions,
@@ -602,20 +537,10 @@ so ask everything you need to know."""
 
         # Save questions subagent trajectory
         # Calculate metrics directly from Step instances
-        total_prompt = sum(
-            step.metrics.prompt_tokens or 0 for step in questions_steps if step.metrics
-        )
-        total_completion = sum(
-            step.metrics.completion_tokens or 0
-            for step in questions_steps
-            if step.metrics
-        )
-        total_cached = sum(
-            step.metrics.cached_tokens or 0 for step in questions_steps if step.metrics
-        )
-        total_cost = sum(
-            step.metrics.cost_usd or 0 for step in questions_steps if step.metrics
-        )
+        total_prompt = sum(step.metrics.prompt_tokens or 0 for step in questions_steps if step.metrics)
+        total_completion = sum(step.metrics.completion_tokens or 0 for step in questions_steps if step.metrics)
+        total_cached = sum(step.metrics.cached_tokens or 0 for step in questions_steps if step.metrics)
+        total_cost = sum(step.metrics.cost_usd or 0 for step in questions_steps if step.metrics)
 
         questions_trajectory = Trajectory(
             session_id=questions_session_id,
@@ -637,16 +562,11 @@ so ask everything you need to know."""
             ),
         )
 
-        questions_trajectory_path = (
-            self.logs_dir
-            / f"trajectory.summarization-{self._summarization_count}-questions.json"
-        )
+        questions_trajectory_path = self.logs_dir / f"trajectory.summarization-{self._summarization_count}-questions.json"
         try:
             with open(questions_trajectory_path, "w") as f:
                 json.dump(questions_trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(
-                f"Questions subagent trajectory saved to {questions_trajectory_path}"
-            )
+            self._logger.info(f"Questions subagent trajectory saved to {questions_trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to save questions subagent trajectory: {e}")
 
@@ -661,19 +581,16 @@ so ask everything you need to know."""
         )
 
         # ===== SUBAGENT 3: Answer Providing =====
-        answers_session_id = (
-            f"{self._session_id}-summarization-{self._summarization_count}-answers"
-        )
+        answers_session_id = f"{self._session_id}-summarization-{self._summarization_count}-answers"
         answers_steps = []
 
         answer_request_prompt = (
-            "The next agent has a few questions for you, please answer each of them one by one in detail:\n\n"
-            + model_questions
+            "The next agent has a few questions for you, please answer each of them one by one in detail:\n\n" + model_questions
         )
         answers_steps.append(
             Step(
                 step_id=1,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 source="user",
                 message=answer_request_prompt,
             )
@@ -683,9 +600,7 @@ so ask everything you need to know."""
             start_time = time.time()
             # Use _llm.call with message_history instead of chat.chat to avoid
             # polluting the main chat's cumulative token counts
-            answers_response: LLMResponse = await self._llm.call(
-                prompt=answer_request_prompt, message_history=chat.messages
-            )
+            answers_response: LLMResponse = await self._llm.call(prompt=answer_request_prompt, message_history=chat.messages)
             end_time = time.time()
             request_time_ms = (end_time - start_time) * 1000
             self._api_request_times.append(request_time_ms)
@@ -694,16 +609,14 @@ so ask everything you need to know."""
             usage_info = answers_response.usage
             if usage_info:
                 self._subagent_metrics.total_prompt_tokens += usage_info.prompt_tokens
-                self._subagent_metrics.total_completion_tokens += (
-                    usage_info.completion_tokens
-                )
+                self._subagent_metrics.total_completion_tokens += usage_info.completion_tokens
                 self._subagent_metrics.total_cached_tokens += usage_info.cache_tokens
                 self._subagent_metrics.total_cost_usd += usage_info.cost_usd
 
                 answers_steps.append(
                     Step(
                         step_id=2,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=answers_response.content,
@@ -711,9 +624,7 @@ so ask everything you need to know."""
                             prompt_tokens=usage_info.prompt_tokens,
                             completion_tokens=usage_info.completion_tokens,
                             cached_tokens=usage_info.cache_tokens,
-                            cost_usd=usage_info.cost_usd
-                            if usage_info.cost_usd > 0
-                            else None,
+                            cost_usd=usage_info.cost_usd if usage_info.cost_usd > 0 else None,
                         ),
                     )
                 )
@@ -722,7 +633,7 @@ so ask everything you need to know."""
                 answers_steps.append(
                     Step(
                         step_id=2,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=answers_response.content,
@@ -735,20 +646,10 @@ so ask everything you need to know."""
 
         # Save answers subagent trajectory
         # Calculate metrics directly from Step instances
-        total_prompt = sum(
-            step.metrics.prompt_tokens or 0 for step in answers_steps if step.metrics
-        )
-        total_completion = sum(
-            step.metrics.completion_tokens or 0
-            for step in answers_steps
-            if step.metrics
-        )
-        total_cached = sum(
-            step.metrics.cached_tokens or 0 for step in answers_steps if step.metrics
-        )
-        total_cost = sum(
-            step.metrics.cost_usd or 0 for step in answers_steps if step.metrics
-        )
+        total_prompt = sum(step.metrics.prompt_tokens or 0 for step in answers_steps if step.metrics)
+        total_completion = sum(step.metrics.completion_tokens or 0 for step in answers_steps if step.metrics)
+        total_cached = sum(step.metrics.cached_tokens or 0 for step in answers_steps if step.metrics)
+        total_cost = sum(step.metrics.cost_usd or 0 for step in answers_steps if step.metrics)
 
         answers_trajectory = Trajectory(
             session_id=answers_session_id,
@@ -770,16 +671,11 @@ so ask everything you need to know."""
             ),
         )
 
-        answers_trajectory_path = (
-            self.logs_dir
-            / f"trajectory.summarization-{self._summarization_count}-answers.json"
-        )
+        answers_trajectory_path = self.logs_dir / f"trajectory.summarization-{self._summarization_count}-answers.json"
         try:
             with open(answers_trajectory_path, "w") as f:
                 json.dump(answers_trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(
-                f"Answers subagent trajectory saved to {answers_trajectory_path}"
-            )
+            self._logger.info(f"Answers subagent trajectory saved to {answers_trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to save answers subagent trajectory: {e}")
 
@@ -826,12 +722,8 @@ so ask everything you need to know."""
         free_tokens = context_limit - current_tokens
 
         if free_tokens < 8000:
-            self._logger.debug(
-                f"Proactively summarizing. Free tokens: approximately {free_tokens}"
-            )
-            summary_prompt, subagent_trajectory_refs = await self._summarize(
-                chat, original_instruction, session
-            )
+            self._logger.debug(f"Proactively summarizing. Free tokens: approximately {free_tokens}")
+            summary_prompt, subagent_trajectory_refs = await self._summarize(chat, original_instruction, session)
             return (summary_prompt, subagent_trajectory_refs)
 
         return None
@@ -881,9 +773,7 @@ so ask everything you need to know."""
             # Fallback 1: Try full summary
             try:
                 self._logger.info("SUMMARIZATION: Attempting full summary")
-                summary_prompt, subagent_trajectory_refs = await self._summarize(
-                    chat, original_instruction, session
-                )
+                summary_prompt, subagent_trajectory_refs = await self._summarize(chat, original_instruction, session)
                 # Store subagent_refs to include in the trajectory
                 self._pending_subagent_refs = subagent_trajectory_refs
                 # Store handoff prompt to add as a user step
@@ -899,12 +789,13 @@ so ask everything you need to know."""
                     current_screen = await session.capture_pane(capture_entire=False)
                     limited_screen = current_screen[-1000:] if current_screen else ""
 
-                    short_prompt = f"Briefly continue this task: {original_instruction}\n\nCurrent state: {limited_screen}\n\nNext steps (2-3 sentences):"
+                    short_prompt = (
+                        f"Briefly continue this task: {original_instruction}\n\n"
+                        f"Current state: {limited_screen}\n\nNext steps (2-3 sentences):"
+                    )
 
                     short_llm_response: LLMResponse = await self._llm.call(prompt=short_prompt)
-                    summary_prompt = (
-                        f"{original_instruction}\n\nSummary: {short_llm_response.content}"
-                    )
+                    summary_prompt = f"{original_instruction}\n\nSummary: {short_llm_response.content}"
                     self._logger.info("SUMMARIZATION: Short summary succeeded")
                 except Exception as e:
                     self._logger.error(f"SUMMARIZATION: Short summary failed: {e}")
@@ -914,9 +805,7 @@ so ask everything you need to know."""
                 self._logger.info("SUMMARIZATION: Using ultimate fallback")
                 current_screen = await session.capture_pane(capture_entire=False)
                 limited_screen = current_screen[-1000:] if current_screen else ""
-                summary_prompt = (
-                    f"{original_instruction}\n\nCurrent state: {limited_screen}"
-                )
+                summary_prompt = f"{original_instruction}\n\nCurrent state: {limited_screen}"
 
             if prompt_path is not None:
                 prompt_path.write_text(summary_prompt)
@@ -942,9 +831,7 @@ so ask everything you need to know."""
         except OutputLengthExceededError as e:
             self._logger.info(f"Output length exceeded: {e}")
 
-            truncated_response = getattr(
-                e, "truncated_response", "[TRUNCATED RESPONSE NOT AVAILABLE]"
-            )
+            truncated_response = getattr(e, "truncated_response", "[TRUNCATED RESPONSE NOT AVAILABLE]")
 
             # Try to salvage a valid response from the truncated output
             # Only available for XML parser
@@ -952,15 +839,10 @@ so ask everything you need to know."""
             has_multiple_blocks = False
 
             if hasattr(self._parser, "salvage_truncated_response"):
-                salvaged_response, has_multiple_blocks = (
-                    self._parser.salvage_truncated_response(truncated_response)  # type: ignore
-                )
+                salvaged_response, has_multiple_blocks = self._parser.salvage_truncated_response(truncated_response)  # type: ignore
 
             if salvaged_response:
-                self._logger.debug(
-                    "Output exceeded length but found valid response. "
-                    "Using truncated version."
-                )
+                self._logger.debug("Output exceeded length but found valid response. " "Using truncated version.")
 
                 if response_path is not None:
                     response_path.write_text(salvaged_response)
@@ -973,10 +855,7 @@ so ask everything you need to know."""
             try:
                 parse_result = self._parser.parse_response(truncated_response)
                 if parse_result.warning:
-                    warnings_text = (
-                        f"\n\nParser warnings from your truncated response:\n"
-                        f"{parse_result.warning}"
-                    )
+                    warnings_text = f"\n\nParser warnings from your truncated response:\n" f"{parse_result.warning}"
             except Exception as parse_error:
                 self._logger.debug(f"Failed to parse truncated response: {parse_error}")
 
@@ -1017,9 +896,7 @@ so ask everything you need to know."""
         original_instruction: str = "",
         session: TmuxSession | None = None,
     ) -> tuple[list[Command], bool, str, str, str, LLMResponse]:
-        llm_response = await self._query_llm(
-            chat, prompt, logging_paths, original_instruction, session
-        )
+        llm_response = await self._query_llm(chat, prompt, logging_paths, original_instruction, session)
 
         result = self._parser.parse_response(llm_response.content)
 
@@ -1043,7 +920,14 @@ so ask everything you need to know."""
                 )
             )
 
-        return commands, result.is_task_complete, feedback, result.analysis, result.plan, llm_response
+        return (
+            commands,
+            result.is_task_complete,
+            feedback,
+            result.analysis,
+            result.plan,
+            llm_response,
+        )
 
     async def _execute_commands(
         self,
@@ -1070,9 +954,7 @@ so ask everything you need to know."""
                 return True, self._timeout_template.format(
                     timeout_sec=command.duration_sec,
                     command=command.keystrokes,
-                    terminal_state=self._limit_output_length(
-                        await session.get_incremental_output()
-                    ),
+                    terminal_state=self._limit_output_length(await session.get_incremental_output()),
                 )
 
         return False, self._limit_output_length(await session.get_incremental_output())
@@ -1136,9 +1018,7 @@ so ask everything you need to know."""
                 analysis,
                 plan,
                 llm_response,
-            ) = await self._handle_llm_interaction(
-                chat, prompt, logging_paths, original_instruction, self._session
-            )
+            ) = await self._handle_llm_interaction(chat, prompt, logging_paths, original_instruction, self._session)
 
             # If we have pending subagent refs, add a system step to record the delegation
             # This must happen before we build the agent step
@@ -1147,16 +1027,10 @@ so ask everything you need to know."""
                 self._trajectory_steps.append(
                     Step(
                         step_id=len(self._trajectory_steps) + 1,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="system",
                         message="Context limit exceeded. Performed summarization and handoff to continue task.",
-                        observation=Observation(
-                            results=[
-                                ObservationResult(
-                                    subagent_trajectory_ref=self._pending_subagent_refs
-                                )
-                            ]
-                        ),
+                        observation=Observation(results=[ObservationResult(subagent_trajectory_ref=self._pending_subagent_refs)]),
                     )
                 )
                 self._pending_subagent_refs = None
@@ -1166,7 +1040,7 @@ so ask everything you need to know."""
                 self._trajectory_steps.append(
                     Step(
                         step_id=len(self._trajectory_steps) + 1,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="user",
                         message=self._pending_handoff_prompt,
                     )
@@ -1204,7 +1078,7 @@ so ask everything you need to know."""
                 self._trajectory_steps.append(
                     Step(
                         step_id=len(self._trajectory_steps) + 1,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         source="agent",
                         model_name=self._model_name,
                         message=llm_response.content,
@@ -1217,11 +1091,8 @@ so ask everything you need to know."""
                         ),
                         metrics=Metrics(
                             prompt_tokens=chat.total_input_tokens - tokens_before_input,
-                            completion_tokens=chat.total_output_tokens
-                            - tokens_before_output,
-                            cached_tokens=cache_tokens_used
-                            if cache_tokens_used > 0
-                            else None,
+                            completion_tokens=chat.total_output_tokens - tokens_before_output,
+                            cached_tokens=cache_tokens_used if cache_tokens_used > 0 else None,
                             cost_usd=step_cost if step_cost > 0 else None,
                             completion_token_ids=llm_response.completion_token_ids,
                             logprobs=llm_response.logprobs,
@@ -1244,16 +1115,11 @@ so ask everything you need to know."""
                     observation = terminal_output
                 else:
                     self._pending_completion = True
-                    observation = self._get_completion_confirmation_message(
-                        terminal_output
-                    )
+                    observation = self._get_completion_confirmation_message(terminal_output)
             else:
                 self._pending_completion = False
                 if feedback and "WARNINGS:" in feedback:
-                    observation = (
-                        f"Previous response had warnings:\n{feedback}\n\n"
-                        f"{self._limit_output_length(terminal_output)}"
-                    )
+                    observation = f"Previous response had warnings:\n{feedback}\n\n" f"{self._limit_output_length(terminal_output)}"
                 else:
                     observation = self._limit_output_length(terminal_output)
 
@@ -1319,7 +1185,7 @@ so ask everything you need to know."""
             self._trajectory_steps.append(
                 Step(
                     step_id=len(self._trajectory_steps) + 1,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                     source="agent",
                     model_name=self._model_name,
                     message=message_content,
@@ -1327,11 +1193,8 @@ so ask everything you need to know."""
                     observation=Observation(results=observation_results),
                     metrics=Metrics(
                         prompt_tokens=chat.total_input_tokens - tokens_before_input,
-                        completion_tokens=chat.total_output_tokens
-                        - tokens_before_output,
-                        cached_tokens=cache_tokens_used
-                        if cache_tokens_used > 0
-                        else None,
+                        completion_tokens=chat.total_output_tokens - tokens_before_output,
+                        cached_tokens=cache_tokens_used if cache_tokens_used > 0 else None,
                         cost_usd=step_cost if step_cost > 0 else None,
                         completion_token_ids=llm_response.completion_token_ids,
                         logprobs=llm_response.logprobs,
@@ -1358,9 +1221,7 @@ so ask everything you need to know."""
 
         return self._n_episodes
 
-    async def run(
-        self, instruction: str, environment: BaseEnvironment, context: AgentContext
-    ) -> None:
+    async def run(self, instruction: str, environment: BaseEnvironment, context: AgentContext) -> None:
         self._chat = Chat(self._llm)
         self._context = context
 
@@ -1368,9 +1229,7 @@ so ask everything you need to know."""
             raise RuntimeError("Session is not set")
 
         # Get the terminal state for the initial prompt
-        terminal_state = self._limit_output_length(
-            await self._session.get_incremental_output()
-        )
+        terminal_state = self._limit_output_length(await self._session.get_incremental_output())
 
         initial_prompt = self._prompt_template.format(
             instruction=instruction,
@@ -1381,7 +1240,7 @@ so ask everything you need to know."""
         self._trajectory_steps.append(
             Step(
                 step_id=1,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 source="system",
                 message=initial_prompt,
             )
@@ -1391,7 +1250,7 @@ so ask everything you need to know."""
         self._trajectory_steps.append(
             Step(
                 step_id=2,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 source="user",
                 message=instruction,
             )
@@ -1410,18 +1269,9 @@ so ask everything you need to know."""
             context.rollout_details = self._chat.rollout_details
 
             # Include subagent metrics in context totals
-            context.n_input_tokens = (
-                self._chat.total_input_tokens
-                + self._subagent_metrics.total_prompt_tokens
-            )
-            context.n_output_tokens = (
-                self._chat.total_output_tokens
-                + self._subagent_metrics.total_completion_tokens
-            )
-            context.n_cache_tokens = (
-                self._chat.total_cache_tokens
-                + self._subagent_metrics.total_cached_tokens
-            )
+            context.n_input_tokens = self._chat.total_input_tokens + self._subagent_metrics.total_prompt_tokens
+            context.n_output_tokens = self._chat.total_output_tokens + self._subagent_metrics.total_completion_tokens
+            context.n_cache_tokens = self._chat.total_cache_tokens + self._subagent_metrics.total_cached_tokens
             total_cost = self._chat.total_cost + self._subagent_metrics.total_cost_usd
             context.cost_usd = total_cost if total_cost > 0 else None
             context.metadata = {
@@ -1490,7 +1340,7 @@ so ask everything you need to know."""
 
             # Convert AgentContext to dictionary for JSON serialization
             # AgentContext is a Pydantic model, so we can use model_dump()
-            context_dict = self._context.model_dump(mode='json', exclude_none=True)
+            context_dict = self._context.model_dump(mode="json", exclude_none=True)
 
             with open(context_path, "w") as f:
                 json.dump(context_dict, f, indent=2)

@@ -4,9 +4,10 @@ import shlex
 import time
 from pathlib import Path
 
-from terminus.asciinema_handler import AsciinemaHandler
 from harbor.environments.base import BaseEnvironment
 from harbor.utils.logger import logger
+
+from terminus.asciinema_handler import AsciinemaHandler
 
 
 class TmuxSession:
@@ -14,12 +15,8 @@ class TmuxSession:
     _ENDS_WITH_NEWLINE_PATTERN = r"[\r\n]$"
     _NEWLINE_CHARS = "\r\n"
     _TMUX_COMPLETION_COMMAND = "; tmux wait -S done"
-    GET_ASCIINEMA_TIMESTAMP_SCRIPT_CONTAINER_PATH = Path(
-        "/tmp/get-asciinema-timestamp.sh"
-    )
-    _GET_ASCIINEMA_TIMESTAMP_SCRIPT_HOST_PATH = Path(__file__).parent / (
-        "get-asciinema-timestamp.sh"
-    )
+    GET_ASCIINEMA_TIMESTAMP_SCRIPT_CONTAINER_PATH = Path("/tmp/get-asciinema-timestamp.sh")
+    _GET_ASCIINEMA_TIMESTAMP_SCRIPT_HOST_PATH = Path(__file__).parent / ("get-asciinema-timestamp.sh")
 
     def __init__(
         self,
@@ -83,13 +80,9 @@ class TmuxSession:
         system_info = await self._detect_system_info()
 
         if system_info["package_manager"]:
-            install_command = self._get_combined_install_command(
-                system_info, tools_needed
-            )
+            install_command = self._get_combined_install_command(system_info, tools_needed)
             if install_command:
-                self._logger.debug(
-                    f"Installing tools using {system_info['package_manager']}: {install_command}"
-                )
+                self._logger.debug(f"Installing tools using {system_info['package_manager']}: {install_command}")
                 result = await self.environment.exec(command=install_command)
 
                 if result.return_code == 0:
@@ -97,19 +90,13 @@ class TmuxSession:
                     if not tmux_installed:
                         verify_tmux = await self.environment.exec(command="tmux -V")
                         if verify_tmux.return_code != 0:
-                            self._logger.warning(
-                                "tmux installation verification failed"
-                            )
+                            self._logger.warning("tmux installation verification failed")
                             await self._build_tmux_from_source()
 
                     if not asciinema_installed:
-                        verify_asciinema = await self.environment.exec(
-                            command="asciinema --version"
-                        )
+                        verify_asciinema = await self.environment.exec(command="asciinema --version")
                         if verify_asciinema.return_code != 0:
-                            self._logger.warning(
-                                "asciinema installation verification failed"
-                            )
+                            self._logger.warning("asciinema installation verification failed")
                             await self._install_asciinema_with_pip()
 
                     return
@@ -134,9 +121,7 @@ class TmuxSession:
         }
 
         # Check for OS release files
-        os_release_result = await self.environment.exec(
-            command="cat /etc/os-release 2>/dev/null || echo 'not found'"
-        )
+        os_release_result = await self.environment.exec(command="cat /etc/os-release 2>/dev/null || echo 'not found'")
 
         # Check uname for system type
         uname_result = await self.environment.exec(command="uname -s")
@@ -154,19 +139,13 @@ class TmuxSession:
         ]
 
         for pm_name in package_managers:
-            check_result = await self.environment.exec(
-                command=f"which {pm_name} >/dev/null 2>&1"
-            )
+            check_result = await self.environment.exec(command=f"which {pm_name} >/dev/null 2>&1")
             if check_result.return_code == 0:
                 system_info["package_manager"] = pm_name
                 break
 
         # Try to determine OS from available info
-        if (
-            os_release_result.return_code == 0
-            and os_release_result.stdout
-            and "not found" not in os_release_result.stdout
-        ):
+        if os_release_result.return_code == 0 and os_release_result.stdout and "not found" not in os_release_result.stdout:
             stdout_lower = os_release_result.stdout.lower()
             if "ubuntu" in stdout_lower or "debian" in stdout_lower:
                 system_info["os"] = "debian-based"
@@ -219,7 +198,10 @@ class TmuxSession:
         try:
             # Install build dependencies based on detected system - with non-interactive flags
             dep_commands = [
-                "DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential libevent-dev libncurses5-dev curl",
+                (
+                    "DEBIAN_FRONTEND=noninteractive apt-get update && "
+                    "DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential libevent-dev libncurses5-dev curl"
+                ),
                 "yum groupinstall -y 'Development Tools' && yum install -y libevent-devel ncurses-devel curl",
                 "dnf groupinstall -y 'Development Tools' && dnf install -y libevent-devel ncurses-devel curl",
                 "apk add --no-cache build-base libevent-dev ncurses-dev curl",
@@ -245,9 +227,7 @@ class TmuxSession:
             result = await self.environment.exec(command=build_cmd)
 
             # Verify installation
-            verify_result = await self.environment.exec(
-                command="tmux -V || /usr/local/bin/tmux -V"
-            )
+            verify_result = await self.environment.exec(command="tmux -V || /usr/local/bin/tmux -V")
             if verify_result.return_code == 0:
                 self._logger.info("tmux successfully built and installed from source")
             else:
@@ -282,9 +262,7 @@ class TmuxSession:
                 result = await self.environment.exec(command=cmd)
                 if result.return_code == 0:
                     # Verify installation
-                    verify_result = await self.environment.exec(
-                        command="asciinema --version"
-                    )
+                    verify_result = await self.environment.exec(command="asciinema --version")
                     if verify_result.return_code == 0:
                         self._logger.info("asciinema successfully installed using pip")
                         return
@@ -339,28 +317,18 @@ class TmuxSession:
         await self._attempt_tmux_installation()
 
         # Check if session already exists
-        check_result = await self.environment.exec(
-            command=f"tmux has-session -t {self._session_name} 2>/dev/null"
-        )
+        check_result = await self.environment.exec(command=f"tmux has-session -t {self._session_name} 2>/dev/null")
 
         if check_result.return_code == 0:
             # Session exists, kill it first
             self._logger.debug(f"Existing session {self._session_name} found, killing it")
-            kill_result = await self.environment.exec(
-                command=f"tmux kill-session -t {self._session_name}"
-            )
+            kill_result = await self.environment.exec(command=f"tmux kill-session -t {self._session_name}")
             if kill_result.return_code != 0:
-                self._logger.warning(
-                    f"Failed to kill existing session: {kill_result.stderr}"
-                )
+                self._logger.warning(f"Failed to kill existing session: {kill_result.stderr}")
 
-        start_session_result = await self.environment.exec(
-            command=self._tmux_start_session
-        )
+        start_session_result = await self.environment.exec(command=self._tmux_start_session)
         if start_session_result.return_code != 0:
-            raise RuntimeError(
-                f"Failed to start tmux session. Error: {start_session_result.stderr}"
-            )
+            raise RuntimeError(f"Failed to start tmux session. Error: {start_session_result.stderr}")
 
         if self._remote_asciinema_recording_path:
             self._logger.debug("Starting recording.")
@@ -399,39 +367,25 @@ class TmuxSession:
 
             # Merge markers into the recording
             if self._markers:
-                self._logger.debug(
-                    f"Merging {len(self._markers)} markers into recording"
-                )
-                handler = AsciinemaHandler(
-                    self._markers, self._local_asciinema_recording_path
-                )
+                self._logger.debug(f"Merging {len(self._markers)} markers into recording")
+                handler = AsciinemaHandler(self._markers, self._local_asciinema_recording_path)
                 handler.merge_markers()
-                self._logger.info(
-                    f"Successfully merged markers into {self._local_asciinema_recording_path}"
-                )
+                self._logger.info(f"Successfully merged markers into {self._local_asciinema_recording_path}")
             else:
                 self._logger.debug("No markers to merge")
 
         # Check if session exists before trying to kill it
-        check_result = await self.environment.exec(
-            command=f"tmux has-session -t {self._session_name} 2>/dev/null"
-        )
+        check_result = await self.environment.exec(command=f"tmux has-session -t {self._session_name} 2>/dev/null")
 
         if check_result.return_code == 0:
             # Session exists, kill it
             self._logger.debug(f"Killing tmux session: {self._session_name}")
-            kill_result = await self.environment.exec(
-                command=f"tmux kill-session -t {self._session_name}"
-            )
+            kill_result = await self.environment.exec(command=f"tmux kill-session -t {self._session_name}")
             if kill_result.return_code != 0:
-                self._logger.warning(
-                    f"Failed to kill tmux session {self._session_name}: {kill_result.stderr}"
-                )
+                self._logger.warning(f"Failed to kill tmux session {self._session_name}: {kill_result.stderr}")
         else:
             # Session doesn't exist or tmux server is not running - this is fine
-            self._logger.debug(
-                f"Tmux session {self._session_name} already terminated or tmux server not running"
-            )
+            self._logger.debug(f"Tmux session {self._session_name} already terminated or tmux server not running")
 
     def _is_enter_key(self, key: str) -> bool:
         return key in self._ENTER_KEYS
@@ -442,9 +396,7 @@ class TmuxSession:
 
     async def is_session_alive(self) -> bool:
         """Check if the tmux session is still alive."""
-        result = await self.environment.exec(
-            command="tmux has-session -t {}".format(self._session_name)
-        )
+        result = await self.environment.exec(command=f"tmux has-session -t {self._session_name}")
         return result.return_code == 0
 
     def _is_executing_command(self, key: str) -> bool:
@@ -498,13 +450,9 @@ class TmuxSession:
         max_timeout_sec: float,
     ):
         start_time_sec = time.time()
-        result = await self.environment.exec(
-            command=" ".join(self._tmux_send_keys(keys))
-        )
+        result = await self.environment.exec(command=" ".join(self._tmux_send_keys(keys)))
 
-        result = await self.environment.exec(
-            f"timeout {max_timeout_sec}s tmux wait done"
-        )
+        result = await self.environment.exec(f"timeout {max_timeout_sec}s tmux wait done")
         if result.return_code != 0:
             raise TimeoutError(f"Command timed out after {max_timeout_sec} seconds")
 
@@ -550,11 +498,7 @@ class TmuxSession:
             block=block,
         )
 
-        self._logger.debug(
-            f"Sending keys: {prepared_keys}"
-            f" min_timeout_sec: {min_timeout_sec}"
-            f" max_timeout_sec: {max_timeout_sec}"
-        )
+        self._logger.debug(f"Sending keys: {prepared_keys}" f" min_timeout_sec: {min_timeout_sec}" f" max_timeout_sec: {max_timeout_sec}")
 
         if is_blocking:
             await self._send_blocking_keys(
@@ -568,9 +512,7 @@ class TmuxSession:
             )
 
     async def capture_pane(self, capture_entire: bool = False) -> str:
-        result = await self.environment.exec(
-            self._tmux_capture_pane(capture_entire=capture_entire)
-        )
+        result = await self.environment.exec(self._tmux_capture_pane(capture_entire=capture_entire))
         return result.stdout or ""
 
     async def _get_visible_screen(self) -> str:
