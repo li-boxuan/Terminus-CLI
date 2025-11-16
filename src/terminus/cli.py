@@ -40,6 +40,14 @@ def run(
         Path | None,
         typer.Option("--context-path", help="Path to write context JSON file"),
     ] = None,
+    collect_rollout_details: Annotated[
+        bool,
+        typer.Option("--collect-rollout-details", help="Collect detailed rollout data including token IDs"),
+    ] = False,
+    session_id: Annotated[
+        str | None,
+        typer.Option("--session-id", help="Session ID for the agent"),
+    ] = None,
 ):
     """Run the Terminus agent with the given instruction."""
     # Check if tmux is available
@@ -83,6 +91,8 @@ def run(
         temperature=temperature,
         trajectory_path=trajectory_path,
         context_path=context_path,
+        collect_rollout_details=collect_rollout_details,
+        session_id=session_id,
     )
 
     # Create trial paths
