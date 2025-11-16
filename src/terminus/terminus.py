@@ -87,6 +87,9 @@ class Terminus(BaseAgent):
                 NOTE: Rollout details will be incomplete if context summarization occurs.
                 See class docstring for details. (default: False)
             session_id: Session ID for the agent (default: None)
+            enable_summarize: Whether to enable context summarization (default: True)
+            trajectory_path: Path to save the trajectory (default: None)
+            context_path: Path to save the context (default: None)
             **kwargs: Additional arguments
         """
         super().__init__(logs_dir, model_name, *args, **kwargs)
