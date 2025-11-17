@@ -5,6 +5,9 @@ it was primarily designed as a research-preview agent for evaluating the abiliti
 power autonomous agents in the terminal.
 
 Note that Terminus CLI is a fork of [Terminus-2 agent](https://www.tbench.ai/terminus), which is a built-in agent in terminal-bench.
+Terminus CLI 2.0.0 shows slightly better performance than Terminus-2 agent with openai/gpt-5 model on terminal-bench@2.0.0 benchmark.
+Different from Terminus-2, which by design runs its control logic outside task's container, Terminus CLI is a standalone library
+that runs entirely inside task's container.
 
 ## Installation
 
