@@ -4,6 +4,8 @@ Terminus CLI is a CLI agent for terminal-based task execution. It can be used as
 it was primarily designed as a research-preview agent for evaluating the abilities of language models to
 power autonomous agents in the terminal.
 
+Note that Terminus CLI is a fork of [Terminus-2 agent](https://www.tbench.ai/terminus), which is a built-in agent in terminal-bench.
+
 ## Installation
 
 ### Prerequisites
