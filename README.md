@@ -1,6 +1,8 @@
-# Terminus
+# Terminus CLI
 
-Terminus is an agent for terminal-based task execution. It integrates with Harbor for agent evaluation and task execution.
+Terminus CLI is a CLI agent for terminal-based task execution. It can be used as a standalone tool, although
+it was primarily designed as a research-preview agent for evaluating the abilities of language models to
+power autonomous agents in the terminal.
 
 ## Installation
 
@@ -8,7 +10,6 @@ Terminus is an agent for terminal-based task execution. It integrates with Harbo
 
 - Python >=3.12
 - tmux (required for terminal session management)
-- Harbor framework installed
 
 ### Installing tmux
 
@@ -36,10 +37,12 @@ sudo pacman -S tmux
 
 ### Install Terminus
 
-For local development:
-
-```bash
-pip install -e /path/to/terminus
+```bash tab="uv"
+uv tool install terminus-ai
+```
+or
+```bash tab="pip"
+pip install terminus-ai
 ```
 
 ## Usage
@@ -65,44 +68,11 @@ terminus --help
 
 **Note:**
 - The CLI runs directly on your local system using tmux (no Docker required)
-- For testing and simple tasks, the CLI is quick and convenient
-- For production use cases and complex evaluations, integration with Harbor is recommended (see below)
+- Perfect for quick tasks, testing, and automation
 
-### Usage with Harbor
+### Programmatic Usage
 
-Terminus is designed to work as an external agent with Harbor. You can use it in several ways:
-
-### Option 1: Using import path (Recommended)
-
-When configuring your Harbor task, use the import path to load the Terminus agent:
-
-```yaml
-agent:
-  import_path: "terminus:Terminus"
-  model_name: "anthropic/claude-sonnet-4"
-  kwargs:
-    parser_name: "json"  # or "xml"
-    temperature: 0.7
-    max_turns: 100
-    enable_summarize: true
-```
-
-Or in Python:
-
-```python
-from harbor import AgentFactory
-from pathlib import Path
-
-agent = AgentFactory.create_agent_from_import_path(
-    import_path="terminus:Terminus",
-    logs_dir=Path("./logs"),
-    model_name="anthropic/claude-sonnet-4",
-    parser_name="json",
-    temperature=0.7,
-)
-```
-
-### Option 2: Direct instantiation
+You can also use Terminus programmatically in Python:
 
 ```python
 from terminus import Terminus
