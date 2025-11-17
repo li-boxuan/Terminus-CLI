@@ -645,7 +645,7 @@ wheels = [
 
 [[package]]
 name = "harbor"
-version = "0.1.15"
+version = "0.1.16"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "datasets" },
@@ -667,9 +667,9 @@ dependencies = [
     { name = "toml" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/d1/56e08ad726d38e1773ce414bc8437a35e51e2c6b9d59431e9995585c9b38/harbor-0.1.15.tar.gz", hash = "sha256:142796a016b44215f1e43d2f300e9859d5c95e2ebb17631fa6216cf38e61bc28", size = 124059, upload-time = "2025-11-13T23:20:32.539Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/eb/cb28f1d683d62a22261f4d730b81b67b3db04c5570ae2d7eae59f5f6b9df/harbor-0.1.16.tar.gz", hash = "sha256:2b2c35392343d468af29bcc10749bdc57e5c15635b0372a0479acf30b3628378", size = 122835, upload-time = "2025-11-17T06:04:30.067Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/94/2924381476ad20164da699031b9f2ec4ece58be4f2ec5a70fe6b23bf9a27/harbor-0.1.15-py3-none-any.whl", hash = "sha256:633dc8da0385071de3785cdbbdeb22ad3820cb2a9dfd707c937ea83815dd559f", size = 182099, upload-time = "2025-11-13T23:20:30.967Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/b4/c39f113ec4de75d820a2d7bd9ff1272d2b75652dba0a56cba50fe5254585/harbor-0.1.16-py3-none-any.whl", hash = "sha256:b47147a4995e35b9574c4eaf5f42614d215f04fcfc02c4a541f3821cea8620f3", size = 179396, upload-time = "2025-11-17T06:04:28.687Z" },
 ]
 
 [[package]]
@@ -1949,7 +1949,7 @@ wheels = [
 
 [[package]]
 name = "terminus-ai"
-version = "2.0.1"
+version = "2.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "harbor" },
@@ -1962,7 +1962,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "harbor" },
+    { name = "harbor", specifier = ">=0.1.16" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "litellm", specifier = ">=1.79.0" },
     { name = "pydantic", specifier = ">=2.11.7" },

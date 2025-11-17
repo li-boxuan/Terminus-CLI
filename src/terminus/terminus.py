@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from importlib.metadata import version as get_package_version
 from pathlib import Path
+from typing import Literal
 
 from harbor.agents.base import BaseAgent
 from harbor.environments.base import BaseEnvironment
@@ -66,6 +67,7 @@ class Terminus(BaseAgent):
         parser_name: str = "json",
         api_base: str | None = None,
         temperature: float = 0.7,
+        reasoning_effort: Literal["none", "minimal", "low", "medium", "high", "default"] = "default",
         collect_rollout_details: bool = False,
         session_id: str | None = None,
         enable_summarize: bool = True,
@@ -83,6 +85,7 @@ class Terminus(BaseAgent):
             parser_name: Parser to use - "json" or "xml" (default: "json")
             api_base: Base URL for the API endpoint
             temperature: Sampling temperature (default: 0.7)
+            reasoning_effort: Qualitative or quantitative measure of effort (default: None)
             collect_rollout_details: Whether to collect detailed rollout data including token IDs.
                 NOTE: Rollout details will be incomplete if context summarization occurs.
                 See class docstring for details. (default: False)
@@ -106,6 +109,7 @@ class Terminus(BaseAgent):
             temperature=temperature,
             collect_rollout_details=collect_rollout_details,
             session_id=session_id,
+            reasoning_effort=reasoning_effort,
         )
         self._parser = self._get_parser()
         self._prompt_template = self._get_prompt_template_path().read_text()
@@ -335,7 +339,7 @@ class Terminus(BaseAgent):
                 break
 
         free_tokens = context_limit - self._count_total_tokens(chat)
-        self._logger.info(f"Unwound messages. Remaining messages: {len(chat.messages)}, Free tokens: approximately {free_tokens}")
+        self._logger.debug(f"Unwound messages. Remaining messages: {len(chat.messages)}, Free tokens: approximately {free_tokens}")
 
     async def _summarize(
         self, chat: Chat, original_instruction: str, session: TmuxSession
@@ -465,7 +469,7 @@ Be comprehensive and detailed. The next agent needs to understand everything
         try:
             with open(summary_trajectory_path, "w") as f:
                 json.dump(summary_trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(f"Summary subagent trajectory saved to {summary_trajectory_path}")
+            self._logger.debug(f"Summary subagent trajectory saved to {summary_trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to save summary subagent trajectory: {e}")
 
@@ -587,7 +591,7 @@ so ask everything you need to know."""
         try:
             with open(questions_trajectory_path, "w") as f:
                 json.dump(questions_trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(f"Questions subagent trajectory saved to {questions_trajectory_path}")
+            self._logger.debug(f"Questions subagent trajectory saved to {questions_trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to save questions subagent trajectory: {e}")
 
@@ -696,7 +700,7 @@ so ask everything you need to know."""
         try:
             with open(answers_trajectory_path, "w") as f:
                 json.dump(answers_trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(f"Answers subagent trajectory saved to {answers_trajectory_path}")
+            self._logger.debug(f"Answers subagent trajectory saved to {answers_trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to save answers subagent trajectory: {e}")
 
@@ -1332,7 +1336,7 @@ so ask everything you need to know."""
             trajectory_path.parent.mkdir(parents=True, exist_ok=True)
             with open(trajectory_path, "w") as f:
                 json.dump(trajectory.to_json_dict(), f, indent=2)
-            self._logger.info(f"Trajectory dumped to {trajectory_path}")
+            self._logger.debug(f"Trajectory dumped to {trajectory_path}")
         except Exception as e:
             self._logger.error(f"Failed to dump trajectory: {e}")
 
@@ -1354,7 +1358,7 @@ so ask everything you need to know."""
 
             with open(context_path, "w") as f:
                 json.dump(context_dict, f, indent=2)
-            self._logger.info(f"Context dumped to {context_path}")
+            self._logger.debug(f"Context dumped to {context_path}")
         except Exception as e:
             self._logger.error(f"Failed to dump context: {e}")
 
