@@ -48,7 +48,7 @@ class TerminusJSONPlainParser:
 
                     if corrected_result.error == "":
                         # Success! Add auto-correction warning
-                        auto_warning = f"AUTO-CORRECTED: {fix_name} - " "please fix this in future responses"
+                        auto_warning = f"AUTO-CORRECTED: {fix_name} - please fix this in future responses"
                         corrected_result.warning = self._combine_warnings(auto_warning, corrected_result.warning)
                         return corrected_result
 
@@ -358,4 +358,4 @@ class TerminusJSONPlainParser:
         if actual_order != expected_present:
             actual_str = " → ".join(actual_order)
             expected_str = " → ".join(expected_present)
-            warnings.append(f"Fields appear in wrong order. Found: {actual_str}, " f"expected: {expected_str}")
+            warnings.append(f"Fields appear in wrong order. Found: {actual_str}, expected: {expected_str}")

@@ -46,7 +46,7 @@ class TerminusXMLPlainParser:
 
                     if corrected_result.error == "":
                         # Success! Add auto-correction warning
-                        auto_warning = f"AUTO-CORRECTED: {fix_name} - " "please fix this in future responses"
+                        auto_warning = f"AUTO-CORRECTED: {fix_name} - please fix this in future responses"
                         corrected_result.warning = self._combine_warnings(auto_warning, corrected_result.warning)
                         return corrected_result
 
@@ -289,7 +289,7 @@ class TerminusXMLPlainParser:
         expected_tags = set(self.required_sections + ["task_complete"])
         unexpected = set(top_level_tags) - expected_tags
         for tag in unexpected:
-            warnings.append(f"Unknown tag found: <{tag}>, expected " f"analysis/plan/commands/task_complete")
+            warnings.append(f"Unknown tag found: <{tag}>, expected analysis/plan/commands/task_complete")
 
         # Check for multiple instances of same tag
         for section_name in self.required_sections + ["task_complete"]:
@@ -297,7 +297,7 @@ class TerminusXMLPlainParser:
             if tag_count > 1:
                 if section_name == "commands":
                     warnings.append(
-                        f"IMPORTANT: Only issue one <commands> block at a time. " f"You issued {tag_count} and only the first was executed."
+                        f"IMPORTANT: Only issue one <commands> block at a time. You issued {tag_count} and only the first was executed."
                     )
                 else:
                     warnings.append(f"Multiple <{section_name}> sections found")
@@ -328,14 +328,14 @@ class TerminusXMLPlainParser:
                 try:
                     duration = float(duration_match.group(1))
                 except ValueError:
-                    warnings.append(f"Command {i+1}: Invalid duration value " f"'{duration_match.group(1)}', using default 1.0")
+                    warnings.append(f"Command {i + 1}: Invalid duration value '{duration_match.group(1)}', using default 1.0")
             else:
-                warnings.append(f"Command {i+1}: Missing duration attribute, using default 1.0")
+                warnings.append(f"Command {i + 1}: Missing duration attribute, using default 1.0")
 
             # Check for newline at end of keystrokes
             if i < len(matches) - 1 and not keystrokes_content.endswith("\n"):
                 warnings.append(
-                    f"Command {i+1} should end with newline when followed "
+                    f"Command {i + 1} should end with newline when followed "
                     f"by another command. Otherwise the two commands will be "
                     f"concatenated together on the same line."
                 )
@@ -360,7 +360,7 @@ class TerminusXMLPlainParser:
 
         # Check for \r\n line endings and warn
         if "\\r\\n" in xml_content:
-            warnings.append("Warning: \\r\\n line endings are not necessary - use \\n " "instead for simpler output")
+            warnings.append("Warning: \\r\\n line endings are not necessary - use \\n instead for simpler output")
 
         return commands, ""
 
@@ -446,7 +446,7 @@ class TerminusXMLPlainParser:
         if actual_order != expected_present:
             actual_str = " → ".join(actual_order)
             expected_str = " → ".join(expected_present)
-            warnings.append(f"Sections appear in wrong order. Found: {actual_str}, " f"expected: {expected_str}")
+            warnings.append(f"Sections appear in wrong order. Found: {actual_str}, expected: {expected_str}")
 
     def _check_attribute_issues(self, attributes_str: str, command_num: int, warnings: list[str]) -> None:
         """Check for attribute-related issues."""
@@ -454,13 +454,13 @@ class TerminusXMLPlainParser:
         unquoted_pattern = re.compile(r'(\w+)\s*=\s*([^"\'\s>]+)')
         unquoted_matches = unquoted_pattern.findall(attributes_str)
         for attr_name, attr_value in unquoted_matches:
-            warnings.append(f"Command {command_num}: Attribute '{attr_name}' value should be " f'quoted: {attr_name}="{attr_value}"')
+            warnings.append(f"Command {command_num}: Attribute '{attr_name}' value should be quoted: {attr_name}=\"{attr_value}\"")
 
         # Check for single quotes (should use double quotes for consistency)
         single_quote_pattern = re.compile(r"(\w+)\s*=\s*'([^']*)'")
         single_quote_matches = single_quote_pattern.findall(attributes_str)
         for attr_name, attr_value in single_quote_matches:
-            warnings.append(f"Command {command_num}: Use double quotes for attribute " f"'{attr_name}': {attr_name}=\"{attr_value}\"")
+            warnings.append(f"Command {command_num}: Use double quotes for attribute '{attr_name}': {attr_name}=\"{attr_value}\"")
 
         # Check for unknown attribute names
         known_attributes = {"duration"}
@@ -468,8 +468,7 @@ class TerminusXMLPlainParser:
         for attr_name in all_attributes:
             if attr_name not in known_attributes:
                 warnings.append(
-                    f"Command {command_num}: Unknown attribute '{attr_name}' - "
-                    f"known attributes are: {', '.join(sorted(known_attributes))}"
+                    f"Command {command_num}: Unknown attribute '{attr_name}' - known attributes are: {', '.join(sorted(known_attributes))}"
                 )
 
     def _check_task_complete(self, response_content: str) -> bool:

@@ -117,7 +117,7 @@ class Terminus(BaseAgent):
         episodes_from_kwargs = kwargs.get("episodes")
         if episodes_from_kwargs is not None:
             self._logger.warning(
-                "The 'episodes' parameter is deprecated and will be removed in a future version. " "Please use 'max_turns' instead."
+                "The 'episodes' parameter is deprecated and will be removed in a future version. Please use 'max_turns' instead."
             )
 
         # Determine the final max episodes value with proper precedence:
@@ -135,7 +135,7 @@ class Terminus(BaseAgent):
 
         if final_max_episodes is not None:
             self._logger.warning(
-                f"max_episodes artificially limited to {final_max_episodes}. " "Consider removing this limit for better task completion."
+                f"max_episodes artificially limited to {final_max_episodes}. Consider removing this limit for better task completion."
             )
             self._max_episodes = final_max_episodes
         else:
@@ -315,7 +315,7 @@ class Terminus(BaseAgent):
         # Calculate omitted bytes
         omitted_bytes = len(output_bytes) - len(first_portion.encode("utf-8")) - len(last_portion.encode("utf-8"))
 
-        return f"{first_portion}\n[... output limited to {max_bytes} bytes; " f"{omitted_bytes} interior bytes omitted ...]\n{last_portion}"
+        return f"{first_portion}\n[... output limited to {max_bytes} bytes; {omitted_bytes} interior bytes omitted ...]\n{last_portion}"
 
     def _unwind_messages_to_free_tokens(self, chat: Chat, target_free_tokens: int = 4000) -> None:
         """Remove recent messages until we have enough free tokens."""
@@ -335,7 +335,7 @@ class Terminus(BaseAgent):
                 break
 
         free_tokens = context_limit - self._count_total_tokens(chat)
-        self._logger.info(f"Unwound messages. Remaining messages: {len(chat.messages)}, " f"Free tokens: approximately {free_tokens}")
+        self._logger.info(f"Unwound messages. Remaining messages: {len(chat.messages)}, Free tokens: approximately {free_tokens}")
 
     async def _summarize(
         self, chat: Chat, original_instruction: str, session: TmuxSession
@@ -863,7 +863,7 @@ so ask everything you need to know."""
                 salvaged_response, has_multiple_blocks = self._parser.salvage_truncated_response(truncated_response)  # type: ignore
 
             if salvaged_response:
-                self._logger.debug("Output exceeded length but found valid response. " "Using truncated version.")
+                self._logger.debug("Output exceeded length but found valid response. Using truncated version.")
 
                 if response_path is not None:
                     response_path.write_text(salvaged_response)
@@ -876,7 +876,7 @@ so ask everything you need to know."""
             try:
                 parse_result = self._parser.parse_response(truncated_response)
                 if parse_result.warning:
-                    warnings_text = f"\n\nParser warnings from your truncated response:\n" f"{parse_result.warning}"
+                    warnings_text = f"\n\nParser warnings from your truncated response:\n{parse_result.warning}"
             except Exception as parse_error:
                 self._logger.debug(f"Failed to parse truncated response: {parse_error}")
 
@@ -1139,7 +1139,7 @@ so ask everything you need to know."""
             else:
                 self._pending_completion = False
                 if feedback and "WARNINGS:" in feedback:
-                    observation = f"Previous response had warnings:\n{feedback}\n\n" f"{self._limit_output_length(terminal_output)}"
+                    observation = f"Previous response had warnings:\n{feedback}\n\n{self._limit_output_length(terminal_output)}"
                 else:
                     observation = self._limit_output_length(terminal_output)
 
