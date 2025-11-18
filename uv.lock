@@ -645,8 +645,8 @@ wheels = [
 
 [[package]]
 name = "harbor"
-version = "0.1.16"
-source = { registry = "https://pypi.org/simple" }
+version = "0.1.17"
+source = { git = "https://github.com/laude-institute/harbor.git?rev=7548bdefce4991d14d3ab461031d72f8a72ed4e1#7548bdefce4991d14d3ab461031d72f8a72ed4e1" }
 dependencies = [
     { name = "datasets" },
     { name = "daytona" },
@@ -666,10 +666,6 @@ dependencies = [
     { name = "tenacity" },
     { name = "toml" },
     { name = "typer" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/eb/cb28f1d683d62a22261f4d730b81b67b3db04c5570ae2d7eae59f5f6b9df/harbor-0.1.16.tar.gz", hash = "sha256:2b2c35392343d468af29bcc10749bdc57e5c15635b0372a0479acf30b3628378", size = 122835, upload-time = "2025-11-17T06:04:30.067Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/b4/c39f113ec4de75d820a2d7bd9ff1272d2b75652dba0a56cba50fe5254585/harbor-0.1.16-py3-none-any.whl", hash = "sha256:b47147a4995e35b9574c4eaf5f42614d215f04fcfc02c4a541f3821cea8620f3", size = 179396, upload-time = "2025-11-17T06:04:28.687Z" },
 ]
 
 [[package]]
@@ -1949,7 +1945,7 @@ wheels = [
 
 [[package]]
 name = "terminus-ai"
-version = "2.0.2"
+version = "2.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "harbor" },
@@ -1962,7 +1958,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "harbor", specifier = ">=0.1.16" },
+    { name = "harbor", git = "https://github.com/laude-institute/harbor.git?rev=7548bdefce4991d14d3ab461031d72f8a72ed4e1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "litellm", specifier = ">=1.79.0" },
     { name = "pydantic", specifier = ">=2.11.7" },

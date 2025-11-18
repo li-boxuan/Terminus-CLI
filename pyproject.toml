@@ -10,7 +10,7 @@ dependencies = [
     "tenacity>=9.1.2",
     "jinja2>=3.1.6",
     "typer>=0.16.0",
-    "harbor>=0.1.17",
+    "harbor @ git+https://github.com/laude-institute/harbor.git@7548bdefce4991d14d3ab461031d72f8a72ed4e1",
 ]
 
 [project.scripts]
