@@ -71,6 +71,7 @@ class Terminus(BaseAgent):
         collect_rollout_details: bool = False,
         session_id: str | None = None,
         enable_summarize: bool = True,
+        max_thinking_tokens: int | None = None,
         trajectory_path: Path | None = None,
         context_path: Path | None = None,
         *args,
@@ -91,6 +92,8 @@ class Terminus(BaseAgent):
                 See class docstring for details. (default: False)
             session_id: Session ID for the agent (default: None)
             enable_summarize: Whether to enable context summarization (default: True)
+            max_thinking_tokens: Maximum thinking tokens for Anthropic extended thinking mode.
+                Minimum value is 1024. (default: None)
             trajectory_path: Path to save the trajectory (default: None)
             context_path: Path to save the context (default: None)
             **kwargs: Additional arguments
@@ -109,6 +112,7 @@ class Terminus(BaseAgent):
             temperature=temperature,
             collect_rollout_details=collect_rollout_details,
             session_id=session_id,
+            max_thinking_tokens=max_thinking_tokens,
             reasoning_effort=reasoning_effort,
         )
         self._parser = self._get_parser()
